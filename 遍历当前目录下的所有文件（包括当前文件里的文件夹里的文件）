@@ -1,0 +1,51 @@
+//获取当前目录名称
+char currentDirName[256] = { 0 };
+GetCurrentDirectoryA(256, currentDirName);
+
+//获取当前文件名称
+char currentFile[256] = { 0 };
+GetModuleFileName(NULL, currentExe, 256);
+
+//遍历当前目录下的所有文件（包括当前文件里的文件夹里的文件）
+void findFile(char* pathName){
+	char currentExe[256] = { 0 };
+	GetModuleFileName(NULL, currentExe, 256);
+	//	printf("%s\n", currentExe);
+	//1 设置要找的文件的名字
+	char findFileName[256] = { 0 };
+	sprintf(findFileName, "%s\\*.*", pathName);
+	//2 找第一个文件
+	WIN32_FIND_DATAA findData;
+	HANDLE hFile = FindFirstFile(findFileName, &findData);
+	if (INVALID_HANDLE_VALUE == hFile)
+	{
+		printf("找文件失败!\n");
+		return;
+	}
+	//3 循环
+	char temp[256];
+	bool isFind = true;
+	while (isFind){
+		//3.1 当前文件是文件夹
+		if (findData.dwFileAttributes == FILE_ATTRIBUTE_DIRECTORY){
+			//3.1.1 设置要找的文件的名字
+			memset(temp, 0, 256);
+			sprintf(temp, "%s\\%s", pathName, findData.cFileName);
+			
+			//3.1.2 调用当前函数去找这个文件夹下面的文件
+			if (findData.cFileName[0] != '.')
+				findFile(temp);//有个坑
+		}
+		else{
+			memset(temp, 0, 256);
+			sprintf(temp, "%s\\%s", pathName, findData.cFileName);			
+			if (0 != strcmp(temp, currentExe)){//temp和当前应用程序名相同，隐藏当前程序
+				{
+					printf("遍历的文件有%s\n", temp);
+				}
+			}
+		}
+		//3.3 找下一个文件，直到没有文件为止
+		isFind = FindNextFile(hFile, &findData);
+	}
+}
